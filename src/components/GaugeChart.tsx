@@ -42,7 +42,7 @@ const SensorGauge: React.FC<SensorGaugeProps> = ({
       }
 
       const now = new Date();
-      const diffInSeconds = (now.getTime() - lastUpdate.getTime()) / 1000;
+      const diffInSeconds = (now.getTime() - new Date(lastUpdate).getTime()) / 1000;
       setIsOnline(diffInSeconds <= 60);
     };
 

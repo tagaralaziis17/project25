@@ -17,8 +17,10 @@ export const login = async (username: string, password: string) => {
   try {
     const response = await axios.post(`${API_URL}/login`, { username, password });
     return response.data;
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new Error('Invalid username or password');
+    }
     throw error;
   }
 };
@@ -62,6 +64,19 @@ export const fetchElectricityData = async (): Promise<ListrikData> => {
     return response.data;
   } catch (error) {
     console.error('Error fetching electricity data:', error);
+    throw error;
+  }
+};
+
+// Export data endpoints
+export const exportData = async (type: 'sensor' | 'fire-smoke' | 'electricity'): Promise<Blob> => {
+  try {
+    const response = await axios.get(`${API_URL}/export/${type}`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error exporting data:', error);
     throw error;
   }
 };

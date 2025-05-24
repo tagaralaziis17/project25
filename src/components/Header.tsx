@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Menu, Bell, User, Download, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import * as XLSX from 'xlsx';
+import { exportData } from '../api/api';
 import { format } from 'date-fns';
 
 interface HeaderProps {
@@ -13,8 +13,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState<number>(30);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [notifications, setNotifications] = useState([
     { id: 1, message: 'Temperature Sensor 1 is critical', time: '2 min ago' },
     { id: 2, message: 'Smoke level is high', time: '5 min ago' },
@@ -58,27 +56,17 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
     localStorage.setItem('notifications', JSON.stringify([]));
   };
 
-  const exportData = async (type: 'sensor' | 'fire-smoke' | 'electricity') => {
+  const handleExport = async (type: 'sensor' | 'fire-smoke' | 'electricity') => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/export/${type}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      
-      const formattedData = data.map((item: any) => ({
-        ...item,
-        timestamp: new Date(item.timestamp).toLocaleString()
-      }));
-      
-      const ws = XLSX.utils.json_to_sheet(formattedData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Data');
-      
-      const timestamp = format(new Date(), 'yyyy-MM-dd_HH-mm');
-      XLSX.writeFile(wb, `${type}-data_${timestamp}.xlsx`);
+      const blob = await exportData(type);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-data_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting data:', error);
     }
@@ -97,25 +85,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
       </div>
       
       <div className="flex items-center space-x-4">
-        <div className="flex items-center">
-          <p className="text-sm text-gray-400 mr-4">
-            Last updated: {format(lastUpdate, 'dd MMM yyyy HH:mm:ss')}
-          </p>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-400 mr-2">Auto refresh:</span>
-            <select 
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              className="bg-gray-700 text-white text-sm rounded-md border-0 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="10">10 seconds</option>
-              <option value="30">30 seconds</option>
-              <option value="60">1 minute</option>
-              <option value="300">5 minutes</option>
-            </select>
-          </div>
-        </div>
-
         <div className="relative" ref={exportRef}>
           <button
             onClick={() => setShowExportMenu(!showExportMenu)}
@@ -127,19 +96,19 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           {showExportMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-lg py-1 z-50">
               <button
-                onClick={() => exportData('sensor')}
+                onClick={() => handleExport('sensor')}
                 className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left"
               >
                 Export Sensor Data
               </button>
               <button
-                onClick={() => exportData('fire-smoke')}
+                onClick={() => handleExport('fire-smoke')}
                 className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left"
               >
                 Export Fire & Smoke Data
               </button>
               <button
-                onClick={() => exportData('electricity')}
+                onClick={() => handleExport('electricity')}
                 className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 w-full text-left"
               >
                 Export Electricity Data

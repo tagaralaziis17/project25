@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
 import SensorGauge from '../components/GaugeChart';
 import { 
   fetchSensor1Data, 
@@ -16,7 +15,7 @@ const Dashboard: React.FC = () => {
   const [electricityData, setElectricityData] = useState<ListrikData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [refreshInterval, setRefreshInterval] = useState<number>(30);
+  const [refreshInterval] = useState<number>(30);
 
   const fetchData = async () => {
     try {
@@ -168,33 +167,6 @@ const Dashboard: React.FC = () => {
           refreshInterval={5}
           showStatus={true}
         />
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-800 p-4 border-t border-gray-700">
-        <div className="container mx-auto flex justify-between items-center">
-          <p className="text-sm text-gray-400">
-            Last updated: {format(lastUpdate, 'dd MMM yyyy HH:mm:ss')}
-          </p>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-400 mr-2">Auto refresh:</span>
-            <select 
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              className="bg-gray-700 text-white text-sm rounded-md border-0 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="10">10 seconds</option>
-              <option value="30">30 seconds</option>
-              <option value="60">1 minute</option>
-              <option value="300">5 minutes</option>
-            </select>
-            <button 
-              onClick={fetchData}
-              className="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded-md text-sm transition-colors duration-200"
-            >
-              Refresh
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
